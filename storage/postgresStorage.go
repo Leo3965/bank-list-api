@@ -1,6 +1,7 @@
-package main
+package storage
 
 import (
+	"bank-list-api/structs"
 	"database/sql"
 	"fmt"
 )
@@ -25,7 +26,7 @@ func NewPostgresStore() (*PostgresStore, error) {
 	}, nil
 }
 
-func (s *PostgresStore) CreateAccount(acc *Account) error {
+func (s *PostgresStore) CreateAccount(acc *structs.Account) error {
 	query := `INSERT INTO account (first_name, last_name, number, balance, created_at) 
 				VALUES ($1, $2, $3, $4, $5)`
 
@@ -44,43 +45,48 @@ func (s *PostgresStore) CreateAccount(acc *Account) error {
 	fmt.Printf("%+v\n", resp)
 	return nil
 }
+
 func (s *PostgresStore) DeleteAccount(id int) error {
-	return nil
-}
-func (s *PostgresStore) UpdateAccount(account *Account) error {
-	return nil
-}
-func (s *PostgresStore) GetAccountByID(id int) (*Account, error) {
-	return nil, nil
+	_, err := s.db.Query("DELETE FROM account where id = $1", id)
+	return err
 }
 
-func (s *PostgresStore) GetAccounts() ([]*Account, error) {
+func (s *PostgresStore) UpdateAccount(account *structs.Account) error {
+	return nil
+}
+
+func (s *PostgresStore) GetAccountByID(id int) (*structs.Account, error) {
+	rows, err := s.db.Query("SELECT  * FROM account WHERE id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		return scanIntoAccount(rows)
+	}
+
+	return nil, fmt.Errorf("account %d not found", id)
+}
+
+func (s *PostgresStore) GetAccounts() ([]*structs.Account, error) {
 	rows, err := s.db.Query("SELECT * FROM account")
 	if err != nil {
 		return nil, err
 	}
 
-	accounts := []*Account{}
+	accounts := []*structs.Account{}
 	for rows.Next() {
-		account := Account{}
-		err := rows.Scan(
-			&account.ID,
-			&account.FirstName,
-			&account.LastName,
-			&account.Number,
-			&account.Balance,
-			&account.CreatedAt)
-
+		account, err := scanIntoAccount(rows)
 		if err != nil {
 			return nil, err
 		}
-
-		accounts = append(accounts, &account)
+		accounts = append(accounts, account)
 	}
+
 	return accounts, nil
 }
 
-func (s *PostgresStore) init() error {
+func (s *PostgresStore) Init() error {
 	return s.createAccountTable()
 }
 
@@ -95,4 +101,17 @@ func (s *PostgresStore) createAccountTable() error {
 
 	_, err := s.db.Exec(query)
 	return err
+}
+
+func scanIntoAccount(rows *sql.Rows) (*structs.Account, error) {
+	account := structs.Account{}
+	err := rows.Scan(
+		&account.ID,
+		&account.FirstName,
+		&account.LastName,
+		&account.Number,
+		&account.Balance,
+		&account.CreatedAt)
+
+	return &account, err
 }

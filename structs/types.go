@@ -1,4 +1,4 @@
-package main
+package structs
 
 import (
 	"math/rand"
@@ -23,17 +23,12 @@ func NewAccount(firstName, lastName string) *Account {
 	}
 }
 
-func NewAccountWithId(firstName, lastName string, id int) *Account {
-	return &Account{
-		ID:        id,
-		FirstName: firstName,
-		LastName:  lastName,
-		Number:    int64(rand.Intn(10000)),
-		CreatedAt: time.Now().UTC(),
-	}
-}
-
 type CreateAccountRequest struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
+}
+
+type TransferRequest struct {
+	ToAccount int `json:"toAccount"`
+	Amount    int `json:"amount"`
 }
