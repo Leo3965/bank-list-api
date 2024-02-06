@@ -4,9 +4,7 @@ import (
 	"bank-list-api/structs"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
-	"strconv"
 )
 
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
@@ -69,9 +67,18 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 
 	account := structs.NewAccount(accReq.FirstName, accReq.LastName)
 
-	if err := s.store.CreateAccount(account); err != nil {
+	accId, err := s.store.CreateAccount(account)
+	if err != nil {
 		return err
 	}
+
+	account.ID = accId
+	tokenString, err := createJWTToken(account)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(tokenString)
 
 	return WriteJSON(w, http.StatusCreated, account)
 }
@@ -88,14 +95,4 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 	}
 
 	return WriteJSON(w, http.StatusOK, map[string]int{"deleted": id})
-}
-
-func getIDFromRequest(r *http.Request) (int, error) {
-	vars := mux.Vars(r)
-	idStr := vars["id"]
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return id, fmt.Errorf("can't convert %s into a integer", idStr)
-	}
-	return id, nil
 }

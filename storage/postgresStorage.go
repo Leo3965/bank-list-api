@@ -4,6 +4,7 @@ import (
 	"bank-list-api/structs"
 	"database/sql"
 	"fmt"
+	"strconv"
 )
 
 type PostgresStore struct {
@@ -26,11 +27,11 @@ func NewPostgresStore() (*PostgresStore, error) {
 	}, nil
 }
 
-func (s *PostgresStore) CreateAccount(acc *structs.Account) error {
+func (s *PostgresStore) CreateAccount(acc *structs.Account) (int, error) {
 	query := `INSERT INTO account (first_name, last_name, number, balance, created_at) 
-				VALUES ($1, $2, $3, $4, $5)`
+				VALUES ($1, $2, $3, $4, $5) RETURNING id`
 
-	resp, err := s.db.Query(
+	rows, err := s.db.Query(
 		query,
 		acc.FirstName,
 		acc.LastName,
@@ -39,11 +40,23 @@ func (s *PostgresStore) CreateAccount(acc *structs.Account) error {
 		acc.CreatedAt)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	fmt.Printf("%+v\n", resp)
-	return nil
+	var idStr string
+	for rows.Next() {
+		err := rows.Scan(&idStr)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
 
 func (s *PostgresStore) DeleteAccount(id int) error {

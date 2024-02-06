@@ -6,7 +6,7 @@ import (
 )
 
 type Storage interface {
-	CreateAccount(account *structs.Account) error
+	CreateAccount(account *structs.Account) (int, error)
 	DeleteAccount(int) error
 	UpdateAccount(account *structs.Account) error
 	GetAccountByID(int) (*structs.Account, error)
