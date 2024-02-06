@@ -4,6 +4,9 @@ build:
 run: build
 	@./bin/bank-list-api
 
+run-seed: build
+	@./bin/bank-list-api --seed
+
 test:
 	@go test -v ./...
 

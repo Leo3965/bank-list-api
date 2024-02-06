@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bank-list-api/service"
 	"bank-list-api/structs"
 	"encoding/json"
 	"fmt"
@@ -65,20 +66,15 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	account := structs.NewAccount(accReq.FirstName, accReq.LastName)
-
-	accId, err := s.store.CreateAccount(account)
+	account, err := service.NewAccount(accReq.FirstName, accReq.LastName, accReq.Password)
 	if err != nil {
 		return err
 	}
 
-	account.ID = accId
-	tokenString, err := createJWTToken(account)
+	account.ID, err = s.store.CreateAccount(account)
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(tokenString)
 
 	return WriteJSON(w, http.StatusCreated, account)
 }
